@@ -1,5 +1,4 @@
 import {
-  AfterInsert,
   BaseEntity,
   Column,
   CreateDateColumn,
@@ -7,6 +6,14 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+export const WalletStatusEnum = {
+  POSTED: 'posted',
+  PENDING: 'pending',
+};
+export class DebitWalletDTO {
+  status: string;
+}
 
 @Entity('balance_cache')
 export class Wallets extends BaseEntity {
@@ -48,11 +55,41 @@ export class Wallets extends BaseEntity {
 
   // Posted Credit + Pending Credits - Posted Debits + Pending Debits
   public get availableBalance() {
-    return 0;
+    // return (
+    //   this.available_credit +
+    //   this.pending_credit -
+    //   (this.available_debit + this.pending_debit))
   }
 
-  async postDebit(amount: number, type?: string) {
-    this.pending_debit + amount;
-    await this.save();
+  async debitWallet(walletRequest: DebitWalletDTO): Promise<Wallets> {
+    /**
+     * This block should be in a DB transaction
+     * check balances
+     * post debits
+     * check balances
+     * if balance is $gte 0 commit
+     * else rollback transaction
+     */
+
+    return this.save();
+  }
+
+  async creditWallet(): Promise<Wallets> {
+    /**
+     * This block should be in a DB transaction
+     * check balances
+     * post debits
+     * check balances
+     * if balance is $gte 0 commit
+     * else rollback transaction
+     */
+
+    return this.save();
+  }
+
+  async reconcile() {
+    /**
+     * Assets = Liabilities + Equity
+     */
   }
 }

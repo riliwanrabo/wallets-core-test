@@ -10,7 +10,7 @@ export class OutwardOnCreate1710135646630 implements MigrationInterface {
             IF NEW.status = '${TransactionStatusEnum.PENDING}' THEN
               UPDATE balance_cache
               SET pending_debit = pending_debit + NEW.amount
-              WHERE wallet_id = NEW.wallet_id;
+              WHERE wallet_id = NEW.wallet_id;  
             END IF;
         END;
     `);

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wallets } from 'src/wallets/entities/wallet.entity';
 import {
-  InwardTransactions,
-  OutwardTransactions,
+  InwardTransaction,
+  OutwardTransaction,
 } from 'src/transactions/entities/transaction.entity';
 
 @Injectable()
@@ -18,13 +18,15 @@ export class UsersService {
     @InjectRepository(Wallets)
     private readonly walletsRepository: Repository<Wallets>,
 
-    @InjectRepository(InwardTransactions)
-    private readonly inwTransactionRepository: Repository<InwardTransactions>,
+    @InjectRepository(InwardTransaction)
+    private readonly inwTransactionRepository: Repository<InwardTransaction>,
 
-    @InjectRepository(OutwardTransactions)
-    private readonly outTransactionRepository: Repository<OutwardTransactions>,
+    @InjectRepository(OutwardTransaction)
+    private readonly outTransactionRepository: Repository<OutwardTransaction>,
 
     private readonly datasource: DataSource,
+
+    private readonly entityManager: EntityManager,
   ) {}
   async create(createUserDto: CreateUserDto) {
     const newUser = this.userRepository.create(createUserDto);
@@ -52,8 +54,12 @@ export class UsersService {
   }
 
   async simulateEntries(request: any) {
-    const newWallet = this.walletsRepository.create(request);
-    return await this.walletsRepository.save(newWallet);
+    return this.datasource.manager.transaction(async (em) => {
+      const newWallet = this.walletsRepository.create(request);
+      // await this.walletsRepository.save(newWallet);
+
+      em.save(newWallet);
+    });
   }
 
   async simulatePayin(request: any) {
@@ -78,8 +84,16 @@ export class UsersService {
 
   async simulatePayout(request: any) {
     const queryRunner = this.datasource.createQueryRunner();
+
+    // create wallet if not exists (simulation)
+    this.createWallet(request, queryRunner);
+
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
+    // check available balance
+    const availableBalance = new Wallets().availableBalance;
+    console.log(availableBalance);
 
     try {
       const newTransaction = queryRunner.manager.create(
@@ -87,15 +101,6 @@ export class UsersService {
         request,
       );
 
-      const count = await queryRunner.manager.count(
-        this.walletsRepository.target,
-      );
-      if (count === 0) {
-        await queryRunner.manager.save(
-          this.walletsRepository.target,
-          this.walletsRepository.create(request),
-        );
-      }
       const result = await queryRunner.manager.save(newTransaction);
       await queryRunner.commitTransaction();
 
@@ -107,6 +112,17 @@ export class UsersService {
       await queryRunner.release();
     }
   }
+  async createWallet(request, queryRunner) {
+    const count = await queryRunner.manager.count(
+      this.walletsRepository.target,
+    );
+    if (count === 0) {
+      await queryRunner.manager.save(
+        this.walletsRepository.target,
+        this.walletsRepository.create(request),
+      );
+    }
+  }
 
   async updatePayout(walletId: string, request: any) {
     const transaction = await this.outTransactionRepository.findOneBy({
@@ -114,6 +130,10 @@ export class UsersService {
     });
 
     transaction.status = request.status;
+
+    // check available balance
+    const availableBalance = new Wallets().availableBalance;
+    console.log('new balance is: ', availableBalance);
 
     return await transaction.save();
   }

@@ -10,6 +10,7 @@ export class OutwardOnUpdate1710135654404 implements MigrationInterface {
             IF NEW.status = '${TransactionStatusEnum.POSTED}' THEN
                 UPDATE balance_cache
                 SET available_credit = available_credit + NEW.amount, 
+                    available_debit = available_debit + NEW.amount,
                     pending_debit = pending_debit - NEW.amount
                 WHERE wallet_id = NEW.wallet_id;
             END IF;

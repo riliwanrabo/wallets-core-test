@@ -1,5 +1,4 @@
 import {
-  AfterInsert,
   BaseEntity,
   Column,
   CreateDateColumn,
@@ -16,6 +15,12 @@ export enum TransactionStatusEnum {
 export class BaseTransaction extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  // @Column({ unique: true })
+  // reference: string;
+
+  // @Column({ unique: true, nullable: true })
+  // external_reference: string;
 
   @Column({ type: 'decimal', precision: 18, scale: 4 })
   amount: number;
@@ -35,30 +40,17 @@ export class BaseTransaction extends BaseEntity {
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  get isPosted() {
-    return this.status === TransactionStatusEnum.POSTED;
-  }
-
-  get isPending() {
-    return this.status === TransactionStatusEnum.PENDING;
-  }
 }
 
 @Entity('inward_transactions')
-export class InwardTransactions extends BaseTransaction {
+export class InwardTransaction extends BaseTransaction {
   constructor() {
     super();
-  }
-  @AfterInsert()
-  updateBalanceCache() {
-    if (this.isPosted) {
-    }
   }
 }
 
 @Entity('outward_transactions')
-export class OutwardTransactions extends BaseTransaction {
+export class OutwardTransaction extends BaseTransaction {
   constructor() {
     super();
   }

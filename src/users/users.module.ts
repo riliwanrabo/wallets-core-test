@@ -5,8 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Wallets } from 'src/wallets/entities/wallet.entity';
 import {
-  InwardTransactions,
-  OutwardTransactions,
+  InwardTransaction,
+  OutwardTransaction,
 } from 'src/transactions/entities/transaction.entity';
 
 @Module({
@@ -14,8 +14,8 @@ import {
     TypeOrmModule.forFeature([
       User,
       Wallets,
-      InwardTransactions,
-      OutwardTransactions,
+      InwardTransaction,
+      OutwardTransaction,
     ]),
   ],
   controllers: [UsersController],
